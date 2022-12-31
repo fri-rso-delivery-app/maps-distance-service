@@ -29,17 +29,23 @@ app.add_middleware(
 )
 
 
-# include graphql router (distances)
-from app.routers import distances
-app.add_route("/distances", distances.graphql_app)
-app.add_websocket_route("/distances", distances.graphql_app)
+# include routers
+#from app.routers import points
+#app.include_router(points.router)
+from app.routers import maps
+app.include_router(maps.router)
+
+# include graphql router
+from app.routers import graphql
+app.add_route('/graphql', graphql.graphql_app)
+app.add_websocket_route('/graphql', graphql.graphql_app)
 
 
 @app.get('/', response_class=HTMLResponse)
 async def root(request: Request):
     return f"""
         <h1> Hello! Docs available at <a href="{request.scope.get("root_path")}/docs">{request.scope.get("root_path")}/docs</a> </h1>
-        <p> The distances graphql api is at <a href="{request.scope.get("root_path")}/distances">{request.scope.get("root_path")}/distances</a> .</p>
+        <p> The graphql api is at <a href="{request.scope.get("root_path")}/graphql">{request.scope.get("root_path")}/graphql</a> .</p>
     """
 
 #

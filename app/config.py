@@ -2,6 +2,9 @@ from pydantic import BaseSettings
 from functools import lru_cache
 
 class Settings(BaseSettings):
+    maps_api_key: str = 'Add Your Key here'
+    maps_api_region: str = 'si'
+
     app_title: str = 'Maps distance microservice'
     app_name: str = 'maps-distance'
 
