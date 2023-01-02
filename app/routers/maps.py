@@ -16,6 +16,9 @@ table = db[TABLE]
 router = APIRouter(
     prefix='/distances',
     tags=['distances'],
+    dependencies=[
+        Depends(get_current_user),
+    ]
 )
 
 
@@ -58,7 +61,6 @@ import googlemaps
 @router.get('/points_list', response_model=List[Distance])
 async def read_distance_matrix(
     settings: Settings = Depends(get_settings),
-    token: JWTokenData = Depends(get_current_user),
     coords: list[str] = Query(default=Required),
     mode: Literal[
         'driving',
@@ -76,6 +78,7 @@ async def read_distance_matrix(
     g_distances = gmaps.distance_matrix(
         tuples, tuples,
         region=settings.maps_api_region,
+        mode=mode,
     )
 
     distances = []
@@ -94,3 +97,40 @@ async def read_distance_matrix(
             )
 
     return distances
+
+
+@router.get('/get_coords', response_model=StrPoint)
+async def get_coords(
+    settings: Settings = Depends(get_settings),
+    address: str = Query(),
+):
+    gmaps = googlemaps.Client(key=settings.maps_api_key)
+    
+    coord = gmaps.geocode(address)
+
+    if len(coord) == 0:
+        raise HTTPException(status_code=404, detail='Address not found')
+
+    lat = coord[0]['geometry']['location']['lat']
+    lng = coord[0]['geometry']['location']['lng']
+
+    return parse_point(f'{lat};{lng}')
+
+@router.get('/get_address', response_model=str)
+async def get_address(
+    settings: Settings = Depends(get_settings),
+    coord: str = Query(),
+):
+    point = parse_point(coord)
+
+    gmaps = googlemaps.Client(key=settings.maps_api_key)
+    
+    address = gmaps.reverse_geocode((
+        float(point.lat),
+        float(point.lng),
+    ))
+
+    if len(address) == 0:
+        raise HTTPException(status_code=404, detail='Address not found')
+
+    return address[0]['formatted_address']
